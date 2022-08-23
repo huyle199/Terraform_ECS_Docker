@@ -1,3 +1,8 @@
+resource "docker_image" "centos" {
+  name = var.image_name
+  keep_locally = false
+}
+
 resource "aws_ecs_cluster" "cluster" {
   name = "first-ecs-cluster"
 
@@ -13,7 +18,9 @@ resource "aws_ecs_cluster_capacity_providers" "cluster" {
   capacity_providers = ["FARGATE_SPOT", "FARGATE"]
 
   default_capacity_provider_strategy {
-    capacity_provider = "FARGATE_SPOT"
+    base              = 1
+    weight            = 100
+    capacity_provider = "FARGATE"
   }
 }
 
@@ -27,14 +34,14 @@ module "ecs-fargate" {
 
   cluster_id         = aws_ecs_cluster.cluster.id
 
-  task_container_image   = docker_image.centos_image.id
+  task_container_image   = var.image_name
   task_definition_cpu    = 256
   task_definition_memory = 512
 
   task_container_port             = 80
   task_container_assign_public_ip = true
 
-  load_balancer = false
+  load_balanced = false
 
   target_groups = [
     {
